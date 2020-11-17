@@ -9,6 +9,7 @@ ENV DISPLAY :0
 ENV BLUEIRIS_VERSION=5
 ENV RESOLUTION=1024x768x24
 
+ADD blueiris.exe /root/blueiris.exe
 ADD blueiris.sh /root/blueiris.sh
 ADD service.reg /root/service.reg
 ADD launch_blueiris.sh /root/launch_blueiris.sh
@@ -29,42 +30,22 @@ RUN apt-get update && \
     wget -nc https://dl.winehq.org/wine-builds/winehq.key && \
     apt-key add winehq.key && \
     apt-add-repository https://dl.winehq.org/wine-builds/ubuntu/ && \
-    apt-get update && apt-get -y --install-recommends install xvfb x11vnc xdotool wget tar supervisor winehq-devel net-tools fluxbox cabextract && \
+    apt-get update && apt-get -y --install-recommends install xvfb x11vnc xdotool wget tar supervisor winehq-staging net-tools fluxbox cabextract && \
     apt-get -y upgrade && \
     wget -O - https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz | tar -xzv -C /root/ && mv /root/noVNC-1.2.0 /root/novnc && \
     wget -O - https://github.com/novnc/websockify/archive/v0.9.0.tar.gz | tar -xzv -C /root/ && mv /root/websockify-0.9.0 /root/novnc/utils/websockify && \
-    # Configure user nobody to match unRAID's settings && \
-    usermod -u 99 nobody && \
-    usermod -g 100 nobody && \
-    usermod -d /config nobody && \
-    chown -R nobody:users /home && \
-    cd /usr/bin/ && \
-    wget  https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks && \
+    curl -O -L  https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks && \
     chmod +x winetricks && \
     chmod +x /root/blueiris.sh /root/launch_blueiris.sh /root/check_process.sh /root/service.sh /root/get_latest_ui3.sh && \
     mkdir -p /usr/share/wine/mono /usr/share/wine/gecko && \
     mv /root/*gecko*.msi /usr/share/wine/gecko/ && mv /root/*mono*.msi /usr/share/wine/mono/ && \
     mkdir -p /root/.fluxbox && \
-    rm -rf /var/lib/apt/lists/* && \
-    groupadd wineuser && \
-    useradd -m -g wineuser wineuser && \
-    mv /root/* /root/.* /home/wineuser/ || true && \
-    ln -s /home/wineuser/menu /home/wineuser/.fluxbox/menu && \
-    ln -s /home/wineuser/novnc/vnc_lite.html /home/wineuser/novnc/index.html && \
-    mkdir -p /home/wineuser/prefix && \
-    chown -R wineuser:wineuser /home/wineuser
-
-
-USER wineuser
-ENV HOME /home/wineuser
-WORKDIR /home/wineuser
-ENV WINEPREFIX /home/wineuser/prefix
-VOLUME /home/wineuser/prefix
-
-
+    rm -rf /var/lib/apt/lists/*
 
 # Expose Port
 EXPOSE 8080
+ENV WINEPREFIX /root/wineprefix/prefix
+
 
 ENTRYPOINT ["/usr/bin/supervisord"]
 CMD ["-c", "/etc/supervisor/conf.d/supervisord-normal.conf"]
