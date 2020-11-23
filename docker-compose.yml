@@ -1,0 +1,29 @@
+version: "3.8"
+services:
+  blueiris:
+    container_name: "blueiris"
+    environment:
+      - "TZ=America/Los_Angeles"
+    ports:
+      - "8080:8080"
+      - "5900:5900"
+      - "8081:8081"
+    volumes:
+      - "/mnt/storage/blueiris:/root/wineprefix:rw"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+    build: .
+    image: "bobbypage/blueiris:2.0"
+    init: true
+    restart: "always"
+    # Use the supervisord config to run as service without vnc web ui
+    command: ["-c", "/etc/supervisor/conf.d/supervisord-service.conf"]
+  chronyd:
+    container_name: "chronyd"
+    read_only: true
+    ports:
+      - "123:123/udp"
+    image: "simonrupf/chronyd"
